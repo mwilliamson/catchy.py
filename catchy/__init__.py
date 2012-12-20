@@ -1,14 +1,13 @@
 import os
-import tempfile
 import shutil
 import errno
 
-import requests
-
-from catchy.tarballs import extract_gzipped_tarball, create_gzipped_tarball_from_dir
 import catchy.filelock
 from catchy.httpcacher import HttpCacher
+from catchy.status import CacheHit, CacheMiss
 
+
+__all__ = ["HttpCacher", "DirectoryCacher", "NoCachingStrategy"]
 
 class DirectoryCacher(object):
     def __init__(self, cacher_dir):
@@ -45,12 +44,7 @@ class DirectoryCacher(object):
         lock_path = os.path.join(self._cacher_dir, "{0}.lock".format(cache_id))
         # raise immediately if the lock already exists
         return catchy.filelock.FileLock(lock_path, timeout=0)
-        
-    def _release_cache_lock(self, cache_id):
-        self._lock(cache_id).release()
-        
-    def _lock(self, cache_id):
-        return FileLock(lock_path)
+
 
 # TODO: eurgh, what a horrible name
 class NoCachingStrategy(object):
