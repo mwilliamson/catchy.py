@@ -8,7 +8,7 @@ import catchy
 from catchy.tempdir import create_temporary_dir
 from catchy.tarballs import create_gzipped_tarball_from_dir
 
-_install_id = "c05c2cbd1aa1e3865adba215210a7a82b52ccf90"
+_cache_id = "c05c2cbd1aa1e3865adba215210a7a82b52ccf90"
 
 def test(func):
     @functools.wraps(func)
@@ -26,24 +26,24 @@ def test(func):
 
 @test
 def fetch_returns_cache_miss_if_http_server_returns_404(test_runner):
-    result = test_runner.cacher.fetch(_install_id, test_runner.build_dir)
+    result = test_runner.cacher.fetch(_cache_id, test_runner.build_dir)
     assert_equals(False, result.cache_hit)
 
 @test
 def fetch_does_not_create_build_dir_if_http_server_returns_404(test_runner):
-    test_runner.cacher.fetch(_install_id, test_runner.build_dir)
+    test_runner.cacher.fetch(_cache_id, test_runner.build_dir)
     assert_false(os.path.exists(test_runner.build_dir))     
 
 @test
 def fetch_returns_cache_hit_if_http_server_returns_200(test_runner):
-    test_runner.cache_put(_install_id, {"README": "Out of memory and time"})
-    result = test_runner.cacher.fetch(_install_id, test_runner.build_dir)
+    test_runner.cache_put(_cache_id, {"README": "Out of memory and time"})
+    result = test_runner.cacher.fetch(_cache_id, test_runner.build_dir)
     assert_equals(True, result.cache_hit)
     
 @test
 def fetch_downloads_and_extracts_tarball_from_http_server(test_runner):
-    test_runner.cache_put(_install_id, {"README": "Out of memory and time"})
-    test_runner.cacher.fetch(_install_id, test_runner.build_dir)
+    test_runner.cache_put(_cache_id, {"README": "Out of memory and time"})
+    test_runner.cacher.fetch(_cache_id, test_runner.build_dir)
     fetched_file_path = os.path.join(test_runner.build_dir, "README")
     fetched_file_contents = open(fetched_file_path).read()
     assert_equals("Out of memory and time", fetched_file_contents)
@@ -52,9 +52,9 @@ def fetch_downloads_and_extracts_tarball_from_http_server(test_runner):
 def put_uploads_gzipped_tarball_to_http_server(test_runner):
     with create_temporary_dir() as temp_dir:
         open(os.path.join(temp_dir, "README"), "w").write("Out of memory and time")
-        test_runner.cacher.put(_install_id, temp_dir)
+        test_runner.cacher.put(_cache_id, temp_dir)
         
-    test_runner.cacher.fetch(_install_id, test_runner.build_dir)
+    test_runner.cacher.fetch(_cache_id, test_runner.build_dir)
     fetched_file_path = os.path.join(test_runner.build_dir, "README")
     fetched_file_contents = open(fetched_file_path).read()
     assert_equals("Out of memory and time", fetched_file_contents)
@@ -71,10 +71,10 @@ class TestRunner(object):
         self.cacher = catchy.HttpCacher(base_url, staticserver_key)
         self._cacher_dir = cacher_dir
         
-    def cache_put(self, install_id, files):
+    def cache_put(self, cache_id, files):
         with create_temporary_dir() as temp_dir:
-            tarball_dir = os.path.join(temp_dir, install_id)
-            tarball_name = "{0}.tar.gz".format(install_id)
+            tarball_dir = os.path.join(temp_dir, cache_id)
+            tarball_name = "{0}.tar.gz".format(cache_id)
             tarball_path = os.path.join(self._cacher_dir, tarball_name)
             
             _write_files(tarball_dir, files)

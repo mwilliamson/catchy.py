@@ -14,8 +14,8 @@ class HttpCacher(object):
         self._base_url = base_url
         self._key = key
         
-    def fetch(self, install_id, build_dir):
-        url = self._url_for_install_id(install_id)
+    def fetch(self, cache_id, build_dir):
+        url = self._url_for_cache_id(cache_id)
         with tempfile.NamedTemporaryFile() as local_tarball:
             response = requests.get(url, timeout=30)
             if response.status_code == 200:
@@ -28,64 +28,64 @@ class HttpCacher(object):
             
         return CacheMiss()
     
-    def put(self, install_id, build_dir):
-        url = "{0}?key={1}".format(self._url_for_install_id(install_id), self._key)
+    def put(self, cache_id, build_dir):
+        url = "{0}?key={1}".format(self._url_for_cache_id(cache_id), self._key)
         with tempfile.NamedTemporaryFile() as local_tarball:
             create_gzipped_tarball_from_dir(build_dir, local_tarball.name)
             requests.put(url, local_tarball.read())
         
-    def _url_for_install_id(self, install_id):
-        return "{0}/{1}.tar.gz".format(self._base_url.rstrip("/"), install_id)
+    def _url_for_cache_id(self, cache_id):
+        return "{0}/{1}.tar.gz".format(self._base_url.rstrip("/"), cache_id)
 
 
 class DirectoryCacher(object):
     def __init__(self, cacher_dir):
         self._cacher_dir = cacher_dir
     
-    def fetch(self, install_id, build_dir):
-        if self._in_cache(install_id):
-            shutil.copytree(self._cache_dir(install_id), build_dir)
+    def fetch(self, cache_id, build_dir):
+        if self._in_cache(cache_id):
+            shutil.copytree(self._cache_dir(cache_id), build_dir)
             return CacheHit()
         else:
             return CacheMiss()
             
-    def put(self, install_id, build_dir):
-        if not self._in_cache(install_id):
+    def put(self, cache_id, build_dir):
+        if not self._in_cache(cache_id):
             try:
-                with self._cache_lock(install_id):
-                    shutil.copytree(build_dir, self._cache_dir(install_id))
-                    open(self._cache_indicator(install_id), "w").write("")
+                with self._cache_lock(cache_id):
+                    shutil.copytree(build_dir, self._cache_dir(cache_id))
+                    open(self._cache_indicator(cache_id), "w").write("")
             except catchy.filelock.FileLockException:
                 # Somebody else is writing to the cache, so do nothing
                 pass
     
-    def _in_cache(self, install_id):
-        return os.path.exists(self._cache_indicator(install_id))
+    def _in_cache(self, cache_id):
+        return os.path.exists(self._cache_indicator(cache_id))
     
-    def _cache_dir(self, install_id):
-        return os.path.join(self._cacher_dir, install_id)
+    def _cache_dir(self, cache_id):
+        return os.path.join(self._cacher_dir, cache_id)
         
-    def _cache_indicator(self, install_id):
-        return os.path.join(self._cacher_dir, "{0}.built".format(install_id))
+    def _cache_indicator(self, cache_id):
+        return os.path.join(self._cacher_dir, "{0}.built".format(cache_id))
 
-    def _cache_lock(self, install_id):
+    def _cache_lock(self, cache_id):
         _mkdir_p(self._cacher_dir)
-        lock_path = os.path.join(self._cacher_dir, "{0}.lock".format(install_id))
+        lock_path = os.path.join(self._cacher_dir, "{0}.lock".format(cache_id))
         # raise immediately if the lock already exists
         return catchy.filelock.FileLock(lock_path, timeout=0)
         
-    def _release_cache_lock(self, install_id):
-        self._lock(install_id).release()
+    def _release_cache_lock(self, cache_id):
+        self._lock(cache_id).release()
         
-    def _lock(self, install_id):
+    def _lock(self, cache_id):
         return FileLock(lock_path)
 
 # TODO: eurgh, what a horrible name
 class NoCachingStrategy(object):
-    def fetch(self, install_id, build_dir):
+    def fetch(self, cache_id, build_dir):
         return CacheMiss()
     
-    def put(self, install_id, build_dir):
+    def put(self, cache_id, build_dir):
         pass
 
 
