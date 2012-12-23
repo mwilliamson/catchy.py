@@ -14,5 +14,5 @@ setup(
     author='Michael Williamson',
     url='http://github.com/mwilliamson/catchy.py',
     packages=['catchy'],
-    install_requires=['requests==1.0.3'],
+    install_requires=['requests>=1,<2'],
 )
