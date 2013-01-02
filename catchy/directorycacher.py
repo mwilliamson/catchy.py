@@ -12,7 +12,7 @@ class DirectoryCacher(object):
     
     def fetch(self, cache_id, build_dir):
         if self._in_cache(cache_id):
-            shutil.copytree(self._cache_dir(cache_id), build_dir)
+            self._copy_dir(self._cache_dir(cache_id), build_dir)
             return CacheHit()
         else:
             return CacheMiss()
@@ -23,7 +23,7 @@ class DirectoryCacher(object):
                 with self._cache_lock(cache_id):
                     cache_dir = self._cache_dir(cache_id)
                     try:
-                        shutil.copytree(build_dir, cache_dir)
+                        self._copy_dir(build_dir, cache_dir)
                         open(self._cache_indicator(cache_id), "w").write("")
                     except:
                         shutil.rmtree(cache_dir)
@@ -46,6 +46,9 @@ class DirectoryCacher(object):
         lock_path = os.path.join(self._cacher_dir, "{0}.lock".format(cache_id))
         # raise immediately if the lock already exists
         return catchy.filelock.FileLock(lock_path, timeout=0)
+
+    def _copy_dir(self, source, destination):
+        shutil.copytree(source, destination, symlinks=True)
 
 
 def xdg_directory_cacher(name):
