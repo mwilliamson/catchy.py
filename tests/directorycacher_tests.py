@@ -40,7 +40,6 @@ def put_makes_cache_entry_available_for_fetch():
 
 @test
 def symlinks_are_not_converted_to_ordinary_files_when_passing_through_cache():
-    original_value = os.environ.pop("XDG_CACHE_HOME", None)
     with _create_directory_cacher() as cacher, _create_target_dir() as target:
         with create_temporary_dir() as temp_dir:
             open(os.path.join(temp_dir, "README"), "w").write("Out of memory and time")

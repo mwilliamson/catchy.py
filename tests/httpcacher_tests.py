@@ -59,6 +59,23 @@ def put_uploads_gzipped_tarball_to_http_server(test_runner):
     fetched_file_contents = open(fetched_file_path).read()
     assert_equals("Out of memory and time", fetched_file_contents)
 
+
+@test
+def symlinks_are_not_converted_to_ordinary_files_when_passing_through_cache(test_runner):
+    with create_temporary_dir() as temp_dir:
+        open(os.path.join(temp_dir, "README"), "w").write("Out of memory and time")
+        os.symlink("README", os.path.join(temp_dir, "README-sym"))
+        test_runner.cacher.put(_cache_id, temp_dir)
+    
+    target = test_runner.build_dir
+    test_runner.cacher.fetch(_cache_id, test_runner.build_dir)
+    with open(os.path.join(target, "README"), "w") as actual_file:
+        actual_file.write("Wahoo!")
+    fetched_file_path = os.path.join(target, "README-sym")
+    fetched_file_contents = open(fetched_file_path).read()
+    assert_equals("Wahoo!", fetched_file_contents)
+
+
 def _start_http_server(base_dir):
     return staticserver.start(port=port, root=base_dir, key=staticserver_key)
 
