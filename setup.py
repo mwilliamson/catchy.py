@@ -8,7 +8,7 @@ def read(fname):
 
 setup(
     name='catchy',
-    version='0.1.1',
+    version='0.1.2',
     description='Library for caching',
     long_description=read("README"),
     author='Michael Williamson',
