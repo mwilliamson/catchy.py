@@ -41,7 +41,16 @@ class DirectoryCacher(object):
         lock_path = os.path.join(self._cacher_dir, "{0}.lock".format(cache_id))
         # raise immediately if the lock already exists
         return catchy.filelock.FileLock(lock_path, timeout=0)
+
+
+def xdg_directory_cacher(name):
+    return DirectoryCacher(xdg_cache_dir(name))
     
+
+def xdg_cache_dir(name):
+    xdg_cache_home = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
+    return os.path.join(xdg_cache_home, name)
+
     
 def _mkdir_p(path):
     try:

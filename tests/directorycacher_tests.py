@@ -5,6 +5,7 @@ from nose.tools import istest, assert_equals, assert_false
 
 from catchy import DirectoryCacher
 from catchy.tempdir import create_temporary_dir
+from catchy.directorycacher import xdg_cache_dir
 
 
 test = istest
@@ -36,7 +37,30 @@ def put_makes_cache_entry_available_for_fetch():
         fetched_file_path = os.path.join(target, "README")
         fetched_file_contents = open(fetched_file_path).read()
         assert_equals("Out of memory and time", fetched_file_contents)
-    
+
+
+@test
+def xdg_cache_dir_uses_dot_cache_if_env_var_not_set():
+    original_value = os.environ.pop("XDG_CACHE_HOME", None)
+    try:
+        cache_dir = xdg_cache_dir("blah")
+        assert_equals(os.path.expanduser("~/.cache/blah"), cache_dir)
+    finally:
+        if original_value is not None:
+            os.environ["XDG_CACHE_HOME"] = original_value
+
+@test
+def xdg_cache_dir_uses_xdg_cache_home_env_var_if_set():
+    original_value = os.environ.pop("XDG_CACHE_HOME", None)
+    try:
+        os.environ["XDG_CACHE_HOME"] = "/tmp/some/cache"
+        cache_dir = xdg_cache_dir("blah")
+        assert_equals(os.path.expanduser("/tmp/some/cache/blah"), cache_dir)
+    finally:
+        if original_value is None:
+            del os.environ["XDG_CACHE_HOME"]
+        else:
+            os.environ["XDG_CACHE_HOME"] = original_value
 
 @contextlib.contextmanager
 def _create_directory_cacher():
