@@ -21,8 +21,13 @@ class DirectoryCacher(object):
         if not self._in_cache(cache_id):
             try:
                 with self._cache_lock(cache_id):
-                    shutil.copytree(build_dir, self._cache_dir(cache_id))
-                    open(self._cache_indicator(cache_id), "w").write("")
+                    cache_dir = self._cache_dir(cache_id)
+                    try:
+                        shutil.copytree(build_dir, cache_dir)
+                        open(self._cache_indicator(cache_id), "w").write("")
+                    except:
+                        shutil.rmtree(cache_dir)
+                        raise
             except catchy.filelock.FileLockException:
                 # Somebody else is writing to the cache, so do nothing
                 pass
