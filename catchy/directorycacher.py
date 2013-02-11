@@ -1,6 +1,7 @@
 import os
 import shutil
 import errno
+import subprocess
 
 import locket
 
@@ -49,7 +50,9 @@ class DirectoryCacher(object):
         return locket.lock_file(lock_path, timeout=0)
 
     def _copy_dir(self, source, destination):
-        shutil.copytree(source, destination, symlinks=True)
+        # TODO: should be pure Python, but there isn't a stdlib function
+        # that allows the destination to already exist
+        subprocess.check_call(["cp", "-rT", source, destination])
 
 
 def xdg_directory_cacher(name):

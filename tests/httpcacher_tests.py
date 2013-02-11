@@ -61,6 +61,26 @@ def put_uploads_gzipped_tarball_to_http_server(test_runner):
 
 
 @test
+def contents_are_merged_if_target_directory_already_exists(test_runner):
+    os.mkdir(test_runner.build_dir)
+    open(os.path.join(test_runner.build_dir, "hello"), "w").write("Hello there!")
+    
+    with create_temporary_dir() as temp_dir:
+        open(os.path.join(temp_dir, "README"), "w").write("Out of memory and time")
+        test_runner.cacher.put(_cache_id, temp_dir)
+        
+    test_runner.cacher.fetch(_cache_id, test_runner.build_dir)
+    assert_equals(
+        "Out of memory and time",
+        _read_file(os.path.join(test_runner.build_dir, "README"))
+    )
+    assert_equals(
+        "Hello there!",
+        _read_file(os.path.join(test_runner.build_dir, "hello"))
+    )
+
+
+@test
 def symlinks_are_not_converted_to_ordinary_files_when_passing_through_cache(test_runner):
     with create_temporary_dir() as temp_dir:
         open(os.path.join(temp_dir, "README"), "w").write("Out of memory and time")
@@ -104,3 +124,8 @@ def _write_files(root, files):
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
         open(path, "w").write(contents)
+
+
+def _read_file(path):
+    with open(path) as f:
+        return f.read()

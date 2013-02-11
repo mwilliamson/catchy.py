@@ -1,5 +1,6 @@
 import os
 import tempfile
+import errno
 
 import requests
 
@@ -19,7 +20,7 @@ class HttpCacher(object):
             if response.status_code == 200:
                 local_tarball.write(response.content)
                 local_tarball.flush()
-                os.mkdir(build_dir)
+                mkdir_p(build_dir)
                 extract_gzipped_tarball(local_tarball.name, build_dir, strip_components=1)
                 
                 return CacheHit()
@@ -34,3 +35,11 @@ class HttpCacher(object):
         
     def _url_for_cache_id(self, cache_id):
         return "{0}/{1}.tar.gz".format(self._base_url.rstrip("/"), cache_id)
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as error:
+        if not (error.errno == errno.EEXIST and os.path.isdir(path)):
+            raise

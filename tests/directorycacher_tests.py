@@ -36,6 +36,25 @@ def put_makes_cache_entry_available_for_fetch():
         cacher.fetch(_cache_id, target)
         fetched_file_contents = _read_file(os.path.join(target, "README"))
         assert_equals("Out of memory and time", fetched_file_contents)
+
+
+@test
+def contents_are_merged_if_target_directory_already_exists():
+    with _create_directory_cacher() as cacher, create_temporary_dir() as target:
+        open(os.path.join(target, "hello"), "w").write("Hello there!")
+        with create_temporary_dir() as temp_dir:
+            open(os.path.join(temp_dir, "README"), "w").write("Out of memory and time")
+            cacher.put(_cache_id, temp_dir)
+            
+        cacher.fetch(_cache_id, target)
+        assert_equals(
+            "Out of memory and time",
+            _read_file(os.path.join(target, "README"))
+        )
+        assert_equals(
+            "Hello there!",
+            _read_file(os.path.join(target, "hello"))
+        )
             
 
 @test
