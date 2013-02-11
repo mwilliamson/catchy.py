@@ -2,7 +2,8 @@ import os
 import shutil
 import errno
 
-import catchy.filelock
+import locket
+
 from catchy.status import CacheHit, CacheMiss
 
 
@@ -28,7 +29,7 @@ class DirectoryCacher(object):
                     except:
                         shutil.rmtree(cache_dir)
                         raise
-            except catchy.filelock.FileLockException:
+            except locket.LockError:
                 # Somebody else is writing to the cache, so do nothing
                 pass
     
@@ -45,7 +46,7 @@ class DirectoryCacher(object):
         _mkdir_p(self._cacher_dir)
         lock_path = os.path.join(self._cacher_dir, "{0}.lock".format(cache_id))
         # raise immediately if the lock already exists
-        return catchy.filelock.FileLock(lock_path, timeout=0)
+        return locket.lock_file(lock_path, timeout=0)
 
     def _copy_dir(self, source, destination):
         shutil.copytree(source, destination, symlinks=True)
