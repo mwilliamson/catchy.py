@@ -13,56 +13,52 @@ class DirectoryCacher(object):
         self._cacher_dir = cacher_dir
     
     def fetch(self, cache_id, target):
-        if self._in_cache(cache_id):
-            path = self._cache_entry_path(cache_id)
-            self._copy(path, target)
+        return self._cache_entry(cache_id).fetch(target)
+            
+    def put(self, cache_id, source):
+        return self._cache_entry(cache_id).put(source)
+    
+    def _cache_entry(self, cache_id):
+        return CacheEntry(os.path.join(self._cacher_dir, cache_id))
+
+
+class CacheEntry(object):
+    def __init__(self, path):
+        self._path = path
+        
+    def fetch(self, target):
+        if self._has_value():
+            _copy(self._path, target)
             return CacheHit()
         else:
             return CacheMiss()
-            
-    def put(self, cache_id, source):
-        if not self._in_cache(cache_id):
+    
+    def put(self, source):
+        if not self._has_value():
             try:
-                with self._cache_lock(cache_id):
-                    cache_dir = self._cache_entry_path(cache_id)
+                with self._lock():
                     try:
-                        self._copy(source, cache_dir)
-                        open(self._cache_indicator(cache_id), "w").write("")
+                        _copy(source, self._path)
+                        open(self._cache_indicator(), "w").write("")
                     except:
-                        shutil.rmtree(cache_dir)
+                        _delete_dir(self._path)
                         raise
             except locket.LockError:
                 # Somebody else is writing to the cache, so do nothing
                 pass
     
-    def _in_cache(self, cache_id):
-        return os.path.exists(self._cache_indicator(cache_id))
-    
-    def _cache_entry_path(self, cache_id):
-        return os.path.join(self._cacher_dir, cache_id)
+    def _has_value(self):
+        return os.path.exists(self._cache_indicator())
         
-    def _cache_indicator(self, cache_id):
-        return os.path.join(self._cacher_dir, "{0}.built".format(cache_id))
-
-    def _cache_lock(self, cache_id):
-        _mkdir_p(self._cacher_dir)
-        lock_path = os.path.join(self._cacher_dir, "{0}.lock".format(cache_id))
+    def _cache_indicator(self):
+        return "{0}.cached".format(self._path)
+    
+    def _lock(self):
+        _mkdir_p(os.path.dirname(self._path))
+        lock_path = "{0}.lock".format(self._path)
         # raise immediately if the lock already exists
         return locket.lock_file(lock_path, timeout=0)
-
-    def _copy(self, source, destination):
-        if os.path.isdir(source):
-            self._copy_dir(source, destination)
-        else:
-            self._copy_file(source, destination)
-
-    def _copy_dir(self, source, destination):
-        # TODO: should be pure Python, but there isn't a stdlib function
-        # that allows the destination to already exist
-        subprocess.check_call(["cp", "-rT", source, destination])
         
-    def _copy_file(self, source, destination):
-        shutil.copyfile(source, destination)
 
 
 def xdg_directory_cacher(name):
@@ -82,3 +78,23 @@ def _mkdir_p(path):
             pass
         else:
             raise
+
+
+def _copy(source, destination):
+    if os.path.isdir(source):
+        _copy_dir(source, destination)
+    else:
+        _copy_file(source, destination)
+
+def _copy_dir(source, destination):
+    # TODO: should be pure Python, but there isn't a stdlib function
+    # that allows the destination to already exist
+    subprocess.check_call(["cp", "-rT", source, destination])
+    
+def _copy_file(source, destination):
+    shutil.copyfile(source, destination)
+
+
+def _delete_dir(path):
+    if os.path.exists(path):
+        shutil.rmtree(path)
