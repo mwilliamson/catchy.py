@@ -12,20 +12,21 @@ class DirectoryCacher(object):
     def __init__(self, cacher_dir):
         self._cacher_dir = cacher_dir
     
-    def fetch(self, cache_id, build_dir):
+    def fetch(self, cache_id, target):
         if self._in_cache(cache_id):
-            self._copy_dir(self._cache_dir(cache_id), build_dir)
+            path = self._cache_dir(cache_id)
+            self._copy(path, target)
             return CacheHit()
         else:
             return CacheMiss()
             
-    def put(self, cache_id, build_dir):
+    def put(self, cache_id, source):
         if not self._in_cache(cache_id):
             try:
                 with self._cache_lock(cache_id):
                     cache_dir = self._cache_dir(cache_id)
                     try:
-                        self._copy_dir(build_dir, cache_dir)
+                        self._copy(source, cache_dir)
                         open(self._cache_indicator(cache_id), "w").write("")
                     except:
                         shutil.rmtree(cache_dir)
@@ -49,10 +50,19 @@ class DirectoryCacher(object):
         # raise immediately if the lock already exists
         return locket.lock_file(lock_path, timeout=0)
 
+    def _copy(self, source, destination):
+        if os.path.isdir(source):
+            self._copy_dir(source, destination)
+        else:
+            self._copy_file(source, destination)
+
     def _copy_dir(self, source, destination):
         # TODO: should be pure Python, but there isn't a stdlib function
         # that allows the destination to already exist
         subprocess.check_call(["cp", "-rT", source, destination])
+        
+    def _copy_file(self, source, destination):
+        shutil.copyfile(source, destination)
 
 
 def xdg_directory_cacher(name):
