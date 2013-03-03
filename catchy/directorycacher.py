@@ -38,6 +38,8 @@ class CacheEntry(object):
             try:
                 with self._lock():
                     try:
+                        # Remove anything in the cache in case of prior failures
+                        _delete_dir(self._path)
                         _copy(source, self._path)
                         open(self._cache_indicator(), "w").write("")
                     except:
