@@ -1,10 +1,8 @@
-from catchy.httpcacher import HttpCacher
 from catchy.directorycacher import DirectoryCacher, xdg_directory_cacher
 from catchy.status import CacheMiss
 
 
 __all__ = [
-    "HttpCacher",
     "DirectoryCacher",
     "xdg_directory_cacher",
     "NoCachingStrategy"
