@@ -20,13 +20,6 @@ def fetch_returns_cache_miss_if_cache_directory_is_empty():
 
 
 @test
-def fetch_does_not_create_target_dir_if_cache_directory_is_empty():
-    with _create_directory_cacher() as cacher, _create_target_dir() as target:
-        result = cacher.fetch(_cache_id, target)
-        assert_false(os.path.exists(target))
-
-
-@test
 def put_makes_cache_entry_available_for_fetch():
     with _create_directory_cacher() as cacher, _create_target_dir() as target:
         with create_temporary_dir() as temp_dir:
