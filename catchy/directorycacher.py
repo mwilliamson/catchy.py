@@ -14,7 +14,7 @@ class DirectoryCacher(object):
     
     def fetch(self, cache_id, target):
         if self._in_cache(cache_id):
-            path = self._cache_dir(cache_id)
+            path = self._cache_entry_path(cache_id)
             self._copy(path, target)
             return CacheHit()
         else:
@@ -24,7 +24,7 @@ class DirectoryCacher(object):
         if not self._in_cache(cache_id):
             try:
                 with self._cache_lock(cache_id):
-                    cache_dir = self._cache_dir(cache_id)
+                    cache_dir = self._cache_entry_path(cache_id)
                     try:
                         self._copy(source, cache_dir)
                         open(self._cache_indicator(cache_id), "w").write("")
@@ -38,7 +38,7 @@ class DirectoryCacher(object):
     def _in_cache(self, cache_id):
         return os.path.exists(self._cache_indicator(cache_id))
     
-    def _cache_dir(self, cache_id):
+    def _cache_entry_path(self, cache_id):
         return os.path.join(self._cacher_dir, cache_id)
         
     def _cache_indicator(self, cache_id):
